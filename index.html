@@ -1,0 +1,921 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Nova Mood"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style></head><body><title>Nova Mood</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<style>
+/* Layout: one narrow column, fixed bottom tab bar, four views. Dusk-indigo neutrals; mood is a diverging scale (rust to teal) with a gray midpoint. */
+:root {
+  --bg: #F3F4F8;
+  --surface: #FFFFFF;
+  --surface-2: #E9ECF3;
+  --ink: #1A1F2E;
+  --muted: #596077;
+  --line: #D9DDE8;
+  --accent: #3A4BB0;
+  --on-accent: #FFFFFF;
+  --danger: #B3402B;
+  --m1: #B94A33; --m2: #E8A98A; --m3: #CDD1DB; --m4: #6DB5B0; --m5: #187370;
+  --on-m1: #FFFFFF; --on-m2: #1A1F2E; --on-m3: #1A1F2E; --on-m4: #1A1F2E; --on-m5: #FFFFFF;
+  --f-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --f-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11131B; --surface: #1A1D28; --surface-2: #232736; --ink: #E8EAF3; --muted: #9BA2B8; --line: #2D3246;
+    --accent: #9AA8FF; --on-accent: #10131F; --danger: #F08A72;
+    --m1: #DB6C52; --m2: #EDB093; --m3: #4A5065; --m4: #5FB3AE; --m5: #86D6CD;
+    --on-m1: #11131B; --on-m2: #11131B; --on-m3: #E8EAF3; --on-m4: #11131B; --on-m5: #11131B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11131B; --surface: #1A1D28; --surface-2: #232736; --ink: #E8EAF3; --muted: #9BA2B8; --line: #2D3246;
+  --accent: #9AA8FF; --on-accent: #10131F; --danger: #F08A72;
+  --m1: #DB6C52; --m2: #EDB093; --m3: #4A5065; --m4: #5FB3AE; --m5: #86D6CD;
+  --on-m1: #11131B; --on-m2: #11131B; --on-m3: #E8EAF3; --on-m4: #11131B; --on-m5: #11131B;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 0;
+}
+.wrap { max-width: 560px; margin: 0 auto; padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0 14px; }
+.brand { font-family: var(--f-display); font-style: italic; font-size: 1.15rem; color: var(--muted); }
+.top-r { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: .8rem; color: var(--muted); display: inline-flex; align-items: center; gap: 7px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.chip.ok .dot { background: var(--m5); }
+.chip.warn .dot { background: var(--m2); }
+.chip.bad .dot { background: var(--m1); }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); flex: none; }
+.icon-btn svg { width: 18px; height: 18px; }
+
+/* typography */
+.eyebrow { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.title { font-family: var(--f-display); font-weight: 400; font-size: 2rem; line-height: 1.15; text-wrap: balance; }
+.lede { color: var(--muted); font-size: .95rem; }
+.section { display: flex; flex-direction: column; gap: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card h2 { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+legend { padding: 0; font-weight: 600; margin-bottom: 8px; }
+
+/* mood + energy pickers */
+.moods { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.mood-btn { background: var(--surface); border: 1px solid var(--line); border-bottom: 5px solid var(--c); border-radius: 12px; padding: 12px 0 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.mood-btn .n { font-family: var(--f-display); font-size: 1.7rem; line-height: 1; }
+.mood-btn .w { font-size: .72rem; color: var(--muted); }
+.mood-btn[aria-pressed="true"] { background: var(--c); color: var(--on); border-color: var(--c); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.mood-btn[aria-pressed="true"] .w { color: var(--on); }
+.energy { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.seg { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 0; font-size: .85rem; text-align: center; min-width: 0; }
+.seg[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: .9rem; }
+.tag[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.tag[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.tag.emo { text-transform: capitalize; }
+.mini-tags.emo span { background: transparent; border: 1px solid var(--accent); color: var(--accent); text-transform: capitalize; }
+.bar-row.wide { grid-template-columns: 104px 1fr 34px; }
+.row { display: flex; gap: 8px; }
+.row > input { flex: 1; min-width: 0; }
+input[type="text"], input[type="date"], textarea { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
+textarea { resize: vertical; min-height: 76px; }
+.btn { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); padding: 15px 16px; font-size: 1.05rem; width: 100%; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.msg { font-size: .9rem; color: var(--muted); }
+.msg.ok { color: var(--muted); }
+.msg.bad { color: var(--danger); }
+.link { background: none; border: 0; color: var(--accent); padding: 0; text-decoration: underline; font-size: inherit; }
+
+/* history */
+.cal-head { display: flex; align-items: center; justify-content: space-between; }
+.cal-head .m { font-family: var(--f-display); font-size: 1.3rem; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal .wd { text-align: center; font-size: .72rem; color: var(--muted); padding-bottom: 2px; }
+.cell { aspect-ratio: 1; border-radius: 9px; border: 1px dashed var(--line); background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; position: relative; min-width: 0; }
+.cell .d { position: absolute; top: 3px; left: 5px; font-size: .62rem; opacity: .75; }
+.cell .v { font-weight: 700; font-size: 1.05rem; }
+.cell.has { border: 0; background: var(--c); color: var(--on); }
+.cell.sel { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.cell.blank { visibility: hidden; }
+.cell.empty .d { opacity: 1; color: var(--muted); }
+.pill { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 8px; background: var(--c); color: var(--on); font-weight: 700; padding: 0 6px; }
+.list { display: flex; flex-direction: column; }
+.item { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); align-items: start; }
+.item:first-child { border-top: 0; }
+.item .t { font-size: .8rem; color: var(--muted); }
+.item .nt { overflow-wrap: anywhere; }
+.mini-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.mini-tags span { font-size: .75rem; background: var(--surface-2); border-radius: 999px; padding: 2px 9px; color: var(--muted); }
+
+/* report */
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+.tile .k { font-size: .75rem; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.tile .big { font-family: var(--f-display); font-size: 2rem; line-height: 1.1; }
+.tile .sub { font-size: .8rem; color: var(--muted); }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart text { fill: var(--muted); font-size: 10px; font-family: var(--f-body); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 8px; padding: 6px 9px; font-size: .78rem; line-height: 1.3; white-space: nowrap; transform: translate(-50%, -100%); z-index: 2; }
+.tip[hidden] { display: none; }
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: 38px 1fr 62px; gap: 10px; align-items: center; font-size: .85rem; }
+.bar-row .track { background: var(--surface-2); border-radius: 4px; height: 12px; overflow: hidden; }
+.bar-row .fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.bar-row .val { text-align: right; }
+.effects .e { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 9px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+.effects .e:first-child { border-top: 0; }
+.effects .d { font-weight: 600; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+th, td { text-align: left; padding: 5px 8px; border-top: 1px solid var(--line); white-space: nowrap; }
+summary { cursor: pointer; color: var(--accent); }
+
+/* hints */
+.out h3 { font-family: var(--f-display); font-weight: 500; font-size: 1.15rem; margin: 10px 0 4px; }
+.out p { margin: 6px 0; }
+.out ul { margin: 6px 0; padding-left: 20px; }
+.out li { margin: 4px 0; }
+.hint-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* tabs */
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); z-index: 5; }
+.tabs-in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.tab { background: none; border: 0; padding: 6px 0 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--muted); font-size: .72rem; border-radius: 10px; }
+.tab svg { width: 22px; height: 22px; }
+.tab[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
+/* settings sheet */
+.sheet-bg { position: fixed; inset: 0; background: rgba(10, 12, 20, .5); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--bg); width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; border-radius: 18px 18px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.sheet label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); }
+pre { background: var(--surface-2); border-radius: 10px; padding: 10px; font-size: .75rem; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; max-height: 240px; }
+@media (prefers-reduced-motion: no-preference) { .mood-btn, .seg, .tag, .cell { transition: background-color .12s, box-shadow .12s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="brand">Nova Mood</span>
+    <div class="top-r">
+      <button class="chip" id="chip" data-action="chip" type="button"><span class="dot"></span><span id="chipText">Connecting</span></button>
+      <button class="icon-btn" data-action="settings" type="button" aria-label="Connection settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+      </button>
+    </div>
+  </header>
+  <main id="view"></main>
+</div>
+
+<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"></div></nav>
+<div id="sheet" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SERVER = 'GitHub MCP';
+  var CFG_DEFAULT = { owner: 'lorycontixd', repo: 'nova-ai-memory', path: 'mood/entries.json', branch: 'master' };
+  var TZ = 'Europe/Rome';
+  /* How GitHub and the GitHub MCP server say "no such file" (the MCP server words it "does not exist"). */
+  var MISSING_RE = /404|not found|does not exist|does not point to/i;
+  var MOOD_WORDS = ['', 'Rough', 'Low', 'Okay', 'Good', 'Great'];
+  var ENERGY_WORDS = ['', 'Drained', 'Low', 'Steady', 'Good', 'Charged'];
+  var BASE_TAGS = ['sleep', 'work', 'gym', 'family', 'friends', 'focus', 'stress', 'outdoors', 'food'];
+  var EMOTIONS = ['happy', 'calm', 'grateful', 'proud', 'motivated', 'excited', 'content', 'loved', 'anxious', 'stressed', 'overwhelmed', 'tired', 'sad', 'irritated', 'lonely', 'bored'];
+  var MAX_EMOTIONS = 3;
+  var TABS = [
+    { id: 'today', label: 'Today', icon: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>' },
+    { id: 'history', label: 'History', icon: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>' },
+    { id: 'report', label: 'Report', icon: '<path d="M5 20V11M12 20V4M19 20v-6"/>' },
+    { id: 'hints', label: 'Hints', icon: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M18.5 16l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>' }
+  ];
+
+  /* ---------- helpers ---------- */
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var trunc = function (s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+
+  function romeDate(d) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d || new Date());
+  }
+  function romeISO(d) {
+    d = d || new Date();
+    var parts = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(d);
+    var g = function (t) { return parts.filter(function (p) { return p.type === t; })[0].value; };
+    var off = '+00:00';
+    try {
+      var raw = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'longOffset' }).formatToParts(d).filter(function (p) { return p.type === 'timeZoneName'; })[0].value.replace('GMT', '');
+      var m = raw.match(/^([+-])(\d{1,2})(?::(\d{2}))?$/);
+      if (m) off = m[1] + ('0' + m[2]).slice(-2) + ':' + (m[3] || '00');
+    } catch (e) {}
+    return g('year') + '-' + g('month') + '-' + g('day') + 'T' + g('hour') + ':' + g('minute') + ':' + g('second') + off;
+  }
+  function romeHM(ms) {
+    return new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms));
+  }
+  function addDays(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function fmt(s, o) { return new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: 'UTC' }, o)).format(new Date(s + 'T00:00:00Z')); }
+  function wdMon(s) { return (new Date(s + 'T00:00:00Z').getUTCDay() + 6) % 7; }
+  function avg(a) { return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : null; }
+  function f1(x) { return x == null ? '-' : x.toFixed(1); }
+  function moodStyle(v) { return '--c:var(--m' + v + ');--on:var(--on-m' + v + ')'; }
+
+  /* ---------- state ---------- */
+  var cfg = Object.assign({}, CFG_DEFAULT, store.get('nm.cfg', {}));
+  var today = romeDate();
+  var state = {
+    tab: 'today',
+    entries: new Map(),
+    pending: store.get('nm.pending', []),
+    sync: 'loading', lastSync: null, err: null, busy: false,
+    selectedDate: today, form: null, msg: null,
+    histMonth: today.slice(0, 7), histSel: null, histShown: 20,
+    hints: { running: false, kind: null, text: '', trunc: false, err: null },
+    hintCache: store.get('nm.hints', {}),
+    tipIdx: null
+  };
+  /* transport: 'mcp' inside the claude.ai viewer, 'rest' (GitHub API with a token kept in this browser) anywhere else. */
+  var mcp = null, sampleFn = null, aborter = null, transport = null;
+
+  function cacheLocal() {
+    var cached = store.get('nm.cache', null);
+    if (cached && Array.isArray(cached.entries)) cached.entries.forEach(function (e) { state.entries.set(e.date, e); });
+    state.pending.forEach(function (e) { state.entries.set(e.date, e); });
+  }
+  function sortedEntries() { return Array.from(state.entries.values()).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  function windowEntries(end, n) {
+    var start = addDays(end, -(n - 1));
+    return sortedEntries().filter(function (e) { return e.date >= start && e.date <= end; });
+  }
+  function streak() {
+    var d = state.entries.has(today) ? today : addDays(today, -1), n = 0;
+    while (state.entries.has(d)) { n++; d = addDays(d, -1); }
+    return n;
+  }
+  function loadForm(d) {
+    var e = state.entries.get(d);
+    state.form = e ? { mood: e.mood, energy: e.energy || null, emotions: (e.emotions || []).slice(0, MAX_EMOTIONS), tags: (e.tags || []).slice(), note: e.note || '' } : { mood: null, energy: null, emotions: [], tags: [], note: '' };
+  }
+  function allTags() {
+    var set = BASE_TAGS.slice();
+    state.entries.forEach(function (e) { (e.tags || []).forEach(function (t) { if (set.indexOf(t) < 0) set.push(t); }); });
+    (state.form ? state.form.tags : []).forEach(function (t) { if (set.indexOf(t) < 0) set.push(t); });
+    return set;
+  }
+
+  /* ---------- GitHub through the mcp capability ---------- */
+  function parseErr(e) { return { code: (e && e.code) || 'unknown', message: (e && e.message) || String(e) }; }
+  function errCopy(e) {
+    switch (e.code) {
+      case 'server_not_connected': return 'The GitHub connector is not connected. Add it in claude.ai Settings > Connectors, then reopen this page.';
+      case 'needs_reauth': return 'GitHub needs to be reconnected in claude.ai Settings > Connectors.';
+      case 'selection_required': return 'You have more than one GitHub connector. Choose one when asked, then reload.';
+      case 'not_in_manifest':
+      case 'approval_required': return 'GitHub access was not allowed for this page. Tap the status pill and choose Allow.';
+      case 'blocked_by_policy': return 'Your organization blocks this GitHub action.';
+      case 'server_unavailable':
+      case 'upstream_error': return 'GitHub did not answer. Your entry is safe on this device. Tap the status pill to try again.';
+      case 'no_repo_access': return 'GitHub cannot see ' + cfg.owner + '/' + cfg.repo + ' with this credential. For a private repo, use a token that has access to it (connector settings in claude.ai, or Settings in this page).';
+      case 'tool_error':
+        if (MISSING_RE.test(String(e.message || '')) || /\b403\b/.test(String(e.message || ''))) return 'GitHub refused to write to ' + cfg.owner + '/' + cfg.repo + ' (' + trunc(e.message, 80) + '). The token needs Contents: read and write on this repo.';
+        return 'GitHub rejected the request: ' + trunc(e.message, 160);
+      case 'bad_token': return 'GitHub rejected the token. It may be expired or mistyped. Replace it in Settings (sliders icon).';
+      case 'network': return 'Could not reach GitHub. Check your connection. Your entry is safe on this device.';
+      case 'not_granted':
+      case 'capability_disabled':
+      case 'capability_removed': return 'This view cannot reach connectors. Open the page in the Claude app or on claude.ai.';
+      case 'no_token': return 'No GitHub connection in this view. Open Settings (sliders icon) and add a GitHub token, or open the page inside claude.ai. Entries stay on this device until then.';
+      case 'unreadable': return 'The file in the repo is not valid mood data: ' + trunc(e.message, 140);
+      default: return 'Sync failed (' + e.code + '). ' + trunc(e.message, 120);
+    }
+  }
+  function b64ToUtf8(b64) {
+    var bin = atob(String(b64).replace(/\s/g, ''));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function parseFile(res) {
+    var sha = null, text = null, p = res.payload, blocks = res.content || [];
+    if (p && typeof p === 'object' && !Array.isArray(p)) {
+      if (typeof p.sha === 'string') sha = p.sha;
+      if (typeof p.content === 'string') text = p.encoding === 'base64' ? b64ToUtf8(p.content) : p.content;
+    }
+    var joined = blocks.filter(function (b) { return b.type === 'text'; }).map(function (b) { return b.text; }).join('\n');
+    var m = joined.match(/SHA:\s*([0-9a-f]{40})/i);
+    if (!sha && m) sha = m[1];
+    if (text == null) {
+      for (var i = 0; i < blocks.length; i++) {
+        var r = blocks[i].resource;
+        if (blocks[i].type === 'resource' && r) {
+          if (typeof r.text === 'string') { text = r.text; break; }
+          if (typeof r.blob === 'string') { text = b64ToUtf8(r.blob); break; }
+        }
+      }
+    }
+    if (text == null && joined.trim().charAt(0) === '{') text = joined.trim();
+    return { text: text, sha: sha };
+  }
+  function utf8ToB64(s) {
+    var bytes = new TextEncoder().encode(s), bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function getToken() { var t = store.get('nm.token', ''); return typeof t === 'string' ? t : ''; }
+  async function restCall(method, path, body) {
+    var url = 'https://api.github.com/repos/' + encodeURIComponent(cfg.owner) + '/' + encodeURIComponent(cfg.repo) + '/contents/' +
+      path.split('/').map(encodeURIComponent).join('/') + (method === 'GET' ? '?ref=' + encodeURIComponent(cfg.branch) : '');
+    var headers = { 'Authorization': 'Bearer ' + getToken(), 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    if (body) headers['Content-Type'] = 'application/json';
+    try {
+      return await fetch(url, { method: method, headers: headers, cache: 'no-store', body: body ? JSON.stringify(body) : undefined });
+    } catch (e) { throw { code: 'network', message: String((e && e.message) || e) }; }
+  }
+  async function restError(res) {
+    var msg = '';
+    try { var j = await res.json(); msg = (j && j.message) || ''; } catch (e) {}
+    if (res.status === 401) return { code: 'bad_token', message: msg };
+    return { code: 'tool_error', message: 'HTTP ' + res.status + (msg ? ' ' + msg : '') };
+  }
+  /* Read one file: { text, sha }, or null when it does not exist. Same contract over the connector and over the REST API. */
+  async function ghRead(path) {
+    if (transport === 'rest') {
+      var res = await restCall('GET', path);
+      if (res.status === 404) return null;
+      if (!res.ok) throw await restError(res);
+      var j = await res.json();
+      if (Array.isArray(j) || typeof j.content !== 'string') throw { code: 'unreadable', message: 'path is a folder, or the file is too large' };
+      return { text: b64ToUtf8(j.content), sha: j.sha };
+    }
+    if (transport !== 'mcp') throw { code: 'no_token', message: '' };
+    var r;
+    try {
+      r = await mcp.callTool(SERVER, 'get_file_contents', { owner: cfg.owner, repo: cfg.repo, path: path }, { cache: { refresh: true } });
+    } catch (e) {
+      if (e && e.code === 'tool_error' && MISSING_RE.test(String(e.message || ''))) return null;
+      throw e;
+    }
+    return parseFile(r);
+  }
+  async function ghWrite(input) {
+    if (transport === 'rest') {
+      var body = { message: input.message, content: utf8ToB64(input.content), branch: input.branch };
+      if (input.sha) body.sha = input.sha;
+      var res = await restCall('PUT', input.path, body);
+      if (!res.ok) throw await restError(res);
+      return;
+    }
+    if (transport !== 'mcp') throw { code: 'no_token', message: '' };
+    await mcp.callTool(SERVER, 'create_or_update_file', input);
+    try { await mcp.invalidate(SERVER, 'get_file_contents'); } catch (e) {}
+  }
+  /* GitHub answers 404 for a missing file and for a private repo the credential cannot see. Tell them apart. */
+  async function probeRepo() {
+    var r;
+    try { r = await ghRead('README.md'); } catch (e) { return; }
+    if (r === null) throw { code: 'no_repo_access', message: 'repo not visible to the credential' };
+  }
+  async function fetchRemote() {
+    var f = await ghRead(cfg.path);
+    if (f === null) {
+      await probeRepo();
+      return { doc: { version: 1, entries: [] }, sha: null, exists: false };
+    }
+    if (f.text == null) throw { code: 'unreadable', message: 'could not find file text in the connector response (see Connection settings > Test)' };
+    var doc;
+    try { doc = JSON.parse(f.text); } catch (e) { throw { code: 'unreadable', message: 'invalid JSON' }; }
+    if (!doc || !Array.isArray(doc.entries)) throw { code: 'unreadable', message: 'no entries array' };
+    return { doc: doc, sha: f.sha, exists: true };
+  }
+  async function pushEntries(list) {
+    var remote = await fetchRemote();
+    var map = new Map(remote.doc.entries.map(function (e) { return [e.date, e]; }));
+    list.forEach(function (e) { map.set(e.date, e); });
+    var doc = { version: 1, entries: Array.from(map.values()).sort(function (a, b) { return a.date < b.date ? -1 : 1; }) };
+    var last = list[list.length - 1];
+    var input = {
+      owner: cfg.owner, repo: cfg.repo, path: cfg.path, branch: cfg.branch,
+      content: JSON.stringify(doc, null, 1) + '\n',
+      message: '[lorenzo] mood: ' + (list.length === 1 ? last.date : list.length + ' entries')
+    };
+    if (remote.sha) input.sha = remote.sha;
+    else if (remote.exists) throw { code: 'unreadable', message: 'file exists but its SHA was not in the response, cannot update safely' };
+    await ghWrite(input);
+    return doc;
+  }
+  function applyRemote(doc) {
+    state.entries = new Map(doc.entries.map(function (e) { return [e.date, e]; }));
+    state.pending.forEach(function (e) { state.entries.set(e.date, e); });
+    store.set('nm.cache', { entries: doc.entries, at: Date.now() });
+  }
+  async function load() {
+    if (state.busy) return;
+    state.busy = true; state.sync = 'loading'; renderChip();
+    try {
+      var r = await fetchRemote();
+      applyRemote(r.doc);
+      state.err = null; state.sync = 'synced'; state.lastSync = Date.now();
+    } catch (e) {
+      state.err = parseErr(e); state.sync = state.err.code === 'no_token' ? 'noconn' : 'error';
+    } finally { state.busy = false; syncFormIfPristine(); render(); }
+  }
+  async function flush() {
+    if (state.busy) return;
+    var batch = state.pending.slice();
+    if (!batch.length) return load();
+    if (!transport) { state.err = { code: 'no_token', message: '' }; state.sync = 'noconn'; render(); return; }
+    state.busy = true; state.sync = 'saving'; renderChip();
+    try {
+      var doc = await pushEntries(batch);
+      state.pending = state.pending.filter(function (p) { return !batch.some(function (b) { return b.date === p.date && b.savedAt === p.savedAt; }); });
+      store.set('nm.pending', state.pending);
+      applyRemote(doc);
+      state.err = null; state.sync = 'synced'; state.lastSync = Date.now();
+      state.msg = { kind: 'ok', text: 'Saved to GitHub at ' + romeHM(Date.now()) + '.' };
+    } catch (e) {
+      state.err = parseErr(e); state.sync = 'error';
+      state.msg = { kind: 'bad', text: 'Saved on this device only. ' + errCopy(state.err) };
+    } finally { state.busy = false; render(); }
+  }
+  function formPristine() {
+    var f = state.form;
+    return !f || (f.mood == null && !f.energy && !f.note && !f.tags.length && !f.emotions.length);
+  }
+  function syncFormIfPristine() {
+    if (state.form == null || formPristine()) loadForm(state.selectedDate);
+  }
+
+  /* ---------- rendering ---------- */
+  function renderChip() {
+    var chip = $('chip'), t = $('chipText'), n = state.pending.length, cls = '', text;
+    if (state.sync === 'loading') text = 'Syncing';
+    else if (state.sync === 'saving') text = 'Saving';
+    else if (n) { text = n + ' not synced'; cls = 'warn'; }
+    else if (state.sync === 'synced') { text = 'Synced ' + romeHM(state.lastSync || Date.now()); cls = 'ok'; }
+    else if (state.sync === 'noconn') { text = 'This device only'; cls = 'warn'; }
+    else { text = 'Sync failed'; cls = 'bad'; }
+    chip.className = 'chip ' + cls; t.textContent = text;
+  }
+  function renderTabs() {
+    $('tabs').innerHTML = TABS.map(function (t) {
+      return '<button class="tab" type="button" data-action="tab" data-v="' + t.id + '"' + (state.tab === t.id ? ' aria-current="page"' : '') + '>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + t.icon + '</svg>' + t.label + '</button>';
+    }).join('');
+  }
+  function render() {
+    renderChip(); renderTabs();
+    var v = $('view'), ae = document.activeElement, aid = ae && ae.id, ss = ae && ae.selectionStart;
+    if (state.tab === 'today') v.innerHTML = viewToday();
+    else if (state.tab === 'history') v.innerHTML = viewHistory();
+    else if (state.tab === 'report') { v.innerHTML = viewReport(); wireChart(); }
+    else { v.innerHTML = viewHints(); renderHintOut(); }
+    if (state.tab === 'today' && (aid === 'noteInput' || aid === 'newTag') && $(aid)) {
+      $(aid).focus();
+      try { $(aid).setSelectionRange(ss, ss); } catch (e) {}
+    }
+  }
+
+  function viewToday() {
+    var f = state.form, d = state.selectedDate, isToday = d === today, saved = state.entries.get(d);
+    var s = streak();
+    var moods = [1, 2, 3, 4, 5].map(function (i) {
+      return '<button type="button" class="mood-btn" style="' + moodStyle(i) + '" data-action="mood" data-v="' + i + '" aria-pressed="' + (f.mood === i) + '"><span class="n num">' + i + '</span><span class="w">' + MOOD_WORDS[i] + '</span></button>';
+    }).join('');
+    var energy = [1, 2, 3, 4, 5].map(function (i) {
+      return '<button type="button" class="seg" data-action="energy" data-v="' + i + '" aria-pressed="' + (f.energy === i) + '">' + ENERGY_WORDS[i] + '</button>';
+    }).join('');
+    var tags = allTags().map(function (t) {
+      return '<button type="button" class="tag" data-action="tag" data-v="' + esc(t) + '" aria-pressed="' + (f.tags.indexOf(t) >= 0) + '">' + esc(t) + '</button>';
+    }).join('');
+    var full = f.emotions.length >= MAX_EMOTIONS;
+    var emos = EMOTIONS.map(function (t) {
+      var on = f.emotions.indexOf(t) >= 0;
+      return '<button type="button" class="tag emo" data-action="emotion" data-v="' + t + '" aria-pressed="' + on + '"' + (!on && full ? ' aria-disabled="true"' : '') + '>' + t + '</button>';
+    }).join('');
+    var msg = state.msg ? '<p class="msg ' + state.msg.kind + '">' + esc(state.msg.text) + '</p>' : '';
+    var errLine = (state.err && !state.msg) ? '<p class="msg bad">' + esc(errCopy(state.err)) + '</p>' : '';
+    return '<div class="section">' +
+      '<div><p class="eyebrow">' + esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long' })) + '</p>' +
+      '<h1 class="title">' + (isToday ? 'How was today?' : 'How was that day?') + '</h1>' +
+      '<p class="lede num">' + (s ? s + '-day streak. ' : '') + (saved ? 'Saved ' + esc(romeHM(Date.parse(saved.savedAt) || Date.now())) + ', you can still edit it.' : 'Takes ten seconds.') + '</p></div>' +
+      '<fieldset><legend>Mood</legend><div class="moods">' + moods + '</div></fieldset>' +
+      '<fieldset><legend>Emotions <span class="lede num">(optional, up to ' + MAX_EMOTIONS + ': ' + f.emotions.length + '/' + MAX_EMOTIONS + ')</span></legend><div class="tags">' + emos + '</div></fieldset>' +
+      '<fieldset><legend>Energy <span class="lede">(optional)</span></legend><div class="energy">' + energy + '</div></fieldset>' +
+      '<fieldset><legend>What shaped it <span class="lede">(optional)</span></legend><div class="tags">' + tags + '</div>' +
+      '<div class="row"><input type="text" id="newTag" placeholder="Add your own" maxlength="24" autocomplete="off"><button class="btn" type="button" data-action="addtag">Add</button></div></fieldset>' +
+      '<fieldset><legend><label for="noteInput">Note <span class="lede">(optional)</span></label></legend><textarea id="noteInput" maxlength="600" placeholder="One line is plenty">' + esc(f.note) + '</textarea></fieldset>' +
+      '<button class="btn primary" type="button" data-action="save"' + (f.mood == null || state.busy ? ' disabled' : '') + '>' + (saved ? 'Update entry' : 'Save check-in') + '</button>' +
+      msg + errLine +
+      '<div class="row" style="align-items:center;justify-content:space-between"><label class="lede" for="dateInput">Logging for</label>' +
+      '<input type="date" id="dateInput" value="' + d + '" min="' + addDays(today, -30) + '" max="' + today + '" style="width:auto">' +
+      (isToday ? '' : '<button class="btn" type="button" data-action="gotoday">Today</button>') + '</div></div>';
+  }
+
+  function viewHistory() {
+    var ym = state.histMonth, y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+    var first = ym + '-01', lead = wdMon(first), dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    var cells = '';
+    for (var i = 0; i < lead; i++) cells += '<span class="cell blank"></span>';
+    for (var day = 1; day <= dim; day++) {
+      var ds = ym + '-' + ('0' + day).slice(-2), e = state.entries.get(ds), sel = state.histSel === ds;
+      if (ds > today) { cells += '<span class="cell empty" style="opacity:.35"><span class="d">' + day + '</span></span>'; continue; }
+      cells += e ?
+        '<button type="button" class="cell has' + (sel ? ' sel' : '') + '" style="' + moodStyle(e.mood) + '" data-action="day" data-v="' + ds + '" aria-label="' + esc(fmt(ds, { day: 'numeric', month: 'long' })) + ', mood ' + e.mood + '"><span class="d num">' + day + '</span><span class="v num">' + e.mood + '</span></button>' :
+        '<button type="button" class="cell empty' + (sel ? ' sel' : '') + '" data-action="day" data-v="' + ds + '" aria-label="' + esc(fmt(ds, { day: 'numeric', month: 'long' })) + ', no entry"><span class="d num">' + day + '</span></button>';
+    }
+    var canNext = ym < today.slice(0, 7);
+    var detail = '';
+    if (state.histSel) {
+      var se = state.entries.get(state.histSel);
+      detail = '<div class="card"><h2>' + esc(fmt(state.histSel, { weekday: 'long', day: 'numeric', month: 'long' })) + '</h2>' +
+        (se ? entryBlock(se) + '<button class="btn" type="button" data-action="edit" data-v="' + se.date + '">Edit entry</button>' :
+          '<p class="lede">No check-in for this day.</p><button class="btn" type="button" data-action="edit" data-v="' + state.histSel + '">Log it now</button>') + '</div>';
+    }
+    var all = sortedEntries().reverse();
+    var list = all.slice(0, state.histShown).map(function (e) {
+      return '<div class="item"><span class="pill num" style="' + moodStyle(e.mood) + '">' + e.mood + '</span><div><p class="t num">' + esc(fmt(e.date, { weekday: 'short', day: 'numeric', month: 'short' })) + (e.energy ? ' · energy ' + e.energy : '') + '</p>' +
+        (e.note ? '<p class="nt">' + esc(e.note) + '</p>' : '') + emoHtml(e.emotions) + tagsHtml(e.tags) + '</div></div>';
+    }).join('');
+    return '<div class="section"><div><p class="eyebrow">History</p><h1 class="title">Your days</h1></div>' +
+      '<div class="card"><div class="cal-head"><button class="icon-btn" type="button" data-action="prevm" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>' +
+      '<span class="m">' + esc(fmt(first, { month: 'long', year: 'numeric' })) + '</span>' +
+      '<button class="icon-btn" type="button" data-action="nextm" aria-label="Next month"' + (canNext ? '' : ' disabled style="opacity:.4"') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button></div>' +
+      '<div class="cal">' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (w) { return '<span class="wd">' + w + '</span>'; }).join('') + cells + '</div></div>' +
+      detail +
+      '<div class="card"><h2>All entries</h2>' + (all.length ? '<div class="list">' + list + '</div>' + (all.length > state.histShown ? '<button class="btn" type="button" data-action="more">Show more</button>' : '') :
+        '<p class="lede">Nothing here yet. Your first check-in will show up in the calendar and in this list.</p>') + '</div></div>';
+  }
+  function tagsHtml(tags) { return tags && tags.length ? '<div class="mini-tags">' + tags.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' : ''; }
+  function emoHtml(list) { return list && list.length ? '<div class="mini-tags emo">' + list.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' : ''; }
+  function entryBlock(e) {
+    return '<div style="display:flex;gap:12px;align-items:center"><span class="pill num" style="' + moodStyle(e.mood) + '">' + e.mood + '</span><span>' + MOOD_WORDS[e.mood] + (e.energy ? ' · energy ' + ENERGY_WORDS[e.energy].toLowerCase() : '') + '</span></div>' +
+      emoHtml(e.emotions) + tagsHtml(e.tags) + (e.note ? '<p>' + esc(e.note) + '</p>' : '');
+  }
+
+  function viewReport() {
+    var all = sortedEntries();
+    if (all.length < 3) {
+      return '<div class="section"><div><p class="eyebrow">Report</p><h1 class="title">Trends</h1></div><div class="card"><p>Averages, weekday patterns and what lifts or lowers your mood show up after three check-ins. You have ' + all.length + '.</p></div></div>';
+    }
+    var w7 = windowEntries(today, 7), p7 = windowEntries(addDays(today, -7), 7), w30 = windowEntries(today, 30);
+    var a7 = avg(w7.map(function (e) { return e.mood; })), ap = avg(p7.map(function (e) { return e.mood; })), a30 = avg(w30.map(function (e) { return e.mood; }));
+    var delta = a7 != null && ap != null ? a7 - ap : null;
+    var deltaTxt = delta == null ? 'no earlier week to compare' : (delta > 0.05 ? '▲ ' + f1(delta) + ' vs prior week' : delta < -0.05 ? '▼ ' + f1(Math.abs(delta)) + ' vs prior week' : 'same as prior week');
+    var tiles = '<div class="tiles">' +
+      '<div class="tile"><p class="k">7-day mood</p><p class="big num">' + f1(a7) + '</p><p class="sub">' + deltaTxt + '</p></div>' +
+      '<div class="tile"><p class="k">30-day mood</p><p class="big num">' + f1(a30) + '</p><p class="sub num">' + w30.length + ' of 30 days logged</p></div>' +
+      '<div class="tile"><p class="k">Streak</p><p class="big num">' + streak() + '</p><p class="sub">days in a row</p></div>' +
+      '<div class="tile"><p class="k">Total</p><p class="big num">' + all.length + '</p><p class="sub">check-ins</p></div></div>';
+
+    var last90 = windowEntries(today, 90), wk = [[], [], [], [], [], [], []];
+    last90.forEach(function (e) { wk[wdMon(e.date)].push(e.mood); });
+    var names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    var bars = wk.map(function (a, i) {
+      var av = avg(a);
+      return '<div class="bar-row"><span>' + names[i] + '</span><span class="track">' + (av != null ? '<span class="fill" style="display:block;width:' + ((av - 1) / 4 * 100).toFixed(1) + '%"></span>' : '') + '</span><span class="val num">' + (av != null ? f1(av) + ' <span class="lede">n' + a.length + '</span>' : '-') + '</span></div>';
+    }).join('');
+
+    var overall = last90, effects = [];
+    var tagSet = {};
+    overall.forEach(function (e) { (e.tags || []).forEach(function (t) { tagSet[t] = 1; }); });
+    Object.keys(tagSet).forEach(function (t) {
+      var w = overall.filter(function (e) { return (e.tags || []).indexOf(t) >= 0; }).map(function (e) { return e.mood; });
+      var wo = overall.filter(function (e) { return (e.tags || []).indexOf(t) < 0; }).map(function (e) { return e.mood; });
+      if (w.length >= 3 && wo.length >= 3) effects.push({ t: t, n: w.length, avg: avg(w), d: avg(w) - avg(wo) });
+    });
+    effects.sort(function (a, b) { return b.d - a.d; });
+    var eff = effects.length ? effects.map(function (x) {
+      return '<div class="e"><span>' + esc(x.t) + ' <span class="lede num">' + x.n + ' days, avg ' + f1(x.avg) + '</span></span><span class="d num">' + (x.d >= 0 ? '▲ +' : '▼ ') + f1(x.d) + '</span></div>';
+    }).join('') : '<p class="lede">Tag a few days (three or more per tag) and the ones that lift or lower your mood show up here.</p>';
+
+    var emoCount = {};
+    w30.forEach(function (e) { (e.emotions || []).forEach(function (t) { emoCount[t] = (emoCount[t] || 0) + 1; }); });
+    var emoList = Object.keys(emoCount).sort(function (a, b) { return emoCount[b] - emoCount[a]; }).slice(0, 6);
+    var emoMax = emoList.length ? emoCount[emoList[0]] : 1;
+    var emoSection = emoList.length ? '<div class="bars">' + emoList.map(function (t) {
+      return '<div class="bar-row wide"><span style="text-transform:capitalize">' + esc(t) + '</span><span class="track"><span class="fill" style="display:block;width:' + (emoCount[t] / emoMax * 100).toFixed(1) + '%"></span></span><span class="val num">' + emoCount[t] + '</span></div>';
+    }).join('') + '</div>' : '<p class="lede">Pick up to three emotions when you check in and the most frequent ones show up here.</p>';
+
+    var rows = w30.slice().reverse().map(function (e) {
+      return '<tr><td>' + esc(e.date) + '</td><td class="num">' + e.mood + '</td><td class="num">' + (e.energy || '-') + '</td><td>' + esc((e.emotions || []).join(', ')) + '</td><td>' + esc((e.tags || []).join(', ')) + '</td></tr>';
+    }).join('');
+
+    return '<div class="section"><div><p class="eyebrow">Report</p><h1 class="title">Trends</h1></div>' + tiles +
+      '<div class="card"><h2>Mood, last 30 days</h2><div class="chart" id="chart">' + lineChart() + '<div class="tip" id="tip" hidden></div></div></div>' +
+      '<div class="card"><h2>Average by weekday, 90 days</h2><div class="bars">' + bars + '</div></div>' +
+      '<div class="card"><h2>Emotions, last 30 days</h2>' + emoSection + '</div>' +
+      '<div class="card effects"><h2>Tags vs your average</h2>' + eff + '<p class="lede">Difference in average mood on days with the tag vs days without. A pattern, not a cause.</p></div>' +
+      '<div class="card"><details><summary>Show data table</summary><div class="tbl"><table><thead><tr><th>Date</th><th>Mood</th><th>Energy</th><th>Emotions</th><th>Tags</th></tr></thead><tbody>' + rows + '</tbody></table></div></details></div></div>';
+  }
+
+  var chartPts = [];
+  function lineChart() {
+    var W = 360, H = 176, pl = 24, pr = 14, pt = 14, pb = 24, days = [];
+    for (var i = 29; i >= 0; i--) days.push(addDays(today, -i));
+    var x = function (i) { return pl + (W - pl - pr) * i / 29; };
+    var y = function (v) { return pt + (H - pt - pb) * (5 - v) / 4; };
+    chartPts = [];
+    days.forEach(function (d, i) { var e = state.entries.get(d); if (e) chartPts.push({ i: i, x: x(i), y: y(e.mood), e: e }); });
+    var grid = [1, 3, 5].map(function (v) {
+      return '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)" stroke-width="1"' + (v === 3 ? ' stroke-dasharray="3 3"' : '') + '/><text x="' + (pl - 6) + '" y="' + (y(v) + 3) + '" text-anchor="end">' + v + '</text>';
+    }).join('');
+    var xl = [0, 15, 29].map(function (i, k) {
+      return '<text x="' + x(i) + '" y="' + (H - 6) + '" text-anchor="' + (k === 0 ? 'start' : k === 2 ? 'end' : 'middle') + '">' + esc(fmt(days[i], { day: 'numeric', month: 'short' })) + '</text>';
+    }).join('');
+    var path = '';
+    chartPts.forEach(function (p, k) {
+      var prev = chartPts[k - 1];
+      path += (prev && p.i - prev.i <= 3 ? ' L' : ' M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1);
+    });
+    var dots = chartPts.map(function (p, k) {
+      var lastPt = k === chartPts.length - 1;
+      return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + (lastPt ? 5 : 3.5) + '" fill="var(--m' + p.e.mood + ')" stroke="var(--surface)" stroke-width="2"/>';
+    }).join('');
+    var lp = chartPts[chartPts.length - 1];
+    var lbl = lp ? '<text x="' + Math.min(lp.x, W - 8).toFixed(1) + '" y="' + Math.max(lp.y - 10, 10).toFixed(1) + '" text-anchor="end" style="fill:var(--ink);font-weight:700;font-size:11px">' + lp.e.mood + '</text>' : '';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" id="chartSvg" role="img" aria-label="Mood over the last 30 days, line chart. A data table is below.">' + grid + xl +
+      '<path d="' + path + '" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<line id="cross" x1="0" x2="0" y1="' + pt + '" y2="' + (H - pb) + '" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>' + dots + lbl + '</svg>';
+  }
+  function wireChart() {
+    var svg = $('chartSvg'); if (!svg) return;
+    var tip = $('tip'), cross = $('cross');
+    function show(ev) {
+      if (!chartPts.length) return;
+      var r = svg.getBoundingClientRect(), vx = (ev.clientX - r.left) / r.width * 360, best = chartPts[0];
+      chartPts.forEach(function (p) { if (Math.abs(p.x - vx) < Math.abs(best.x - vx)) best = p; });
+      cross.setAttribute('x1', best.x); cross.setAttribute('x2', best.x); cross.setAttribute('visibility', 'visible');
+      var e = best.e;
+      tip.innerHTML = '<b>' + esc(fmt(e.date, { weekday: 'short', day: 'numeric', month: 'short' })) + '</b><br>Mood ' + e.mood + ' ' + MOOD_WORDS[e.mood].toLowerCase() + (e.energy ? ', energy ' + e.energy : '') + (e.tags && e.tags.length ? '<br>' + esc(e.tags.join(', ')) : '');
+      tip.hidden = false;
+      var left = best.x / 360 * r.width, w = tip.offsetWidth;
+      left = Math.max(w / 2, Math.min(r.width - w / 2, left));
+      tip.style.left = left + 'px'; tip.style.top = Math.max(best.y / 176 * r.height - 10, tip.offsetHeight + 2) + 'px';
+    }
+    function hide() { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); }
+    svg.addEventListener('pointermove', show); svg.addEventListener('pointerdown', show);
+    svg.addEventListener('pointerleave', hide); svg.addEventListener('pointercancel', hide);
+  }
+
+  function viewHints() {
+    var n = state.entries.size, off = !sampleFn;
+    var disabled = off || n < 3 || state.hints.running;
+    return '<div class="section"><div><p class="eyebrow">Hints</p><h1 class="title">What your history suggests</h1>' +
+      '<p class="lede">Claude reads your recent check-ins and points out patterns. It runs on your own Claude usage and sends the last 60 days of entries, including notes.</p></div>' +
+      (off ? '<div class="card"><p>Hints need Claude access, which is not available in this view. Open the page in the Claude app or on claude.ai.</p></div>' : '') +
+      (!off && n < 3 ? '<div class="card"><p>Log at least three days first. You have ' + n + '.</p></div>' : '') +
+      '<div class="hint-actions"><button class="btn primary" type="button" data-action="hints" data-v="hints"' + (disabled ? ' disabled' : '') + '>Hints</button>' +
+      '<button class="btn primary" type="button" data-action="hints" data-v="weekly"' + (disabled ? ' disabled' : '') + '>Weekly report</button></div>' +
+      (state.hints.running ? '<button class="btn" type="button" data-action="stop">Stop</button>' : '') +
+      '<div class="card out" id="hintOut"></div></div>';
+  }
+  function hintSig() { var a = sortedEntries(); return a.length + ':' + (a.length ? a[a.length - 1].savedAt : ''); }
+  function renderHintOut() {
+    var box = $('hintOut'); if (!box) return;
+    var h = state.hints, text = h.text, note = '';
+    if (!text && !h.running && !h.err) {
+      var c = state.hintCache.hints || state.hintCache.weekly;
+      var pick = state.hintCache[state.hints.kind || 'hints'] || state.hintCache.hints || state.hintCache.weekly;
+      if (pick) { text = pick.text; note = pick.sig === hintSig() ? 'Generated ' + romeHM(pick.at) + '.' : 'Generated earlier, before your latest entries. Run again to refresh.'; }
+    }
+    box.textContent = '';
+    if (h.running && !text) { var p = document.createElement('p'); p.className = 'lede'; p.textContent = 'Thinking...'; box.appendChild(p); return; }
+    if (!text && !h.err) { var q = document.createElement('p'); q.className = 'lede'; q.textContent = 'Pick Hints for a quick read, or Weekly report for the last seven days.'; box.appendChild(q); return; }
+    renderRich(box, text);
+    if (h.trunc) addNote(box, 'The answer was cut short. Run it again for a shorter one.');
+    if (h.err) addNote(box, h.err, true);
+    if (note) addNote(box, note);
+  }
+  function addNote(box, t, bad) { var p = document.createElement('p'); p.className = 'msg' + (bad ? ' bad' : ''); p.textContent = t; box.appendChild(p); }
+  function renderRich(box, text) {
+    var ul = null;
+    String(text).replace(/\*\*/g, '').split('\n').forEach(function (line) {
+      var l = line.trim();
+      if (!l) { ul = null; return; }
+      var m;
+      if ((m = l.match(/^[-*]\s+(.*)$/))) {
+        if (!ul) { ul = document.createElement('ul'); box.appendChild(ul); }
+        var li = document.createElement('li'); li.textContent = m[1]; ul.appendChild(li); return;
+      }
+      ul = null;
+      if ((m = l.match(/^#{1,4}\s+(.*)$/))) { var h = document.createElement('h3'); h.textContent = m[1]; box.appendChild(h); return; }
+      var p = document.createElement('p'); p.textContent = l; box.appendChild(p);
+    });
+  }
+  function entriesForPrompt(list) {
+    return list.map(function (e) { return e.date + ' | mood ' + e.mood + ' | energy ' + (e.energy || '-') + ' | emotions ' + ((e.emotions || []).join(', ') || '-') + ' | tags ' + ((e.tags || []).join(', ') || '-') + ' | note ' + (e.note || '-'); }).join('\n');
+  }
+  async function runHints(kind) {
+    if (!sampleFn || state.hints.running) return;
+    var recent = windowEntries(today, 60), prompt;
+    var rules = 'Rules: ground every point in specific dates or counts from the data; do not diagnose or give medical advice; if there are fewer than 14 entries say the patterns are tentative; plain dashes only, never em dashes; no preamble.';
+    if (kind === 'weekly') {
+      var wk = windowEntries(today, 7), pv = windowEntries(addDays(today, -7), 7);
+      prompt = 'You are Nova, a personal assistant reviewing the user\'s daily mood log (mood and energy are 1 to 5, 5 is best). Today is ' + today + '.\n\nThis week (last 7 days):\n' + (entriesForPrompt(wk) || '(no entries)') + '\n\nPrevious week:\n' + (entriesForPrompt(pv) || '(no entries)') +
+        '\n\nWrite a weekly report in this exact shape: a "## Week at a glance" heading and 2 sentences; a "## Highs and lows" heading with 2 bullets starting "- "; a "## Patterns" heading with 2 to 3 bullets; a "## Try next week" heading with 2 bullets of small, concrete suggestions. Under 220 words.\n' + rules;
+    } else {
+      prompt = 'You are Nova, a personal assistant reviewing the user\'s daily mood log (mood and energy are 1 to 5, 5 is best). Today is ' + today + '. Entries, oldest first:\n' + entriesForPrompt(recent) +
+        '\n\nGive 4 to 6 practical hints based on this history. Start with one plain sentence summarising the trend, then bullets starting "- ". Mention tags or weekdays that go with better or worse days only when the data supports it. Under 180 words.\n' + rules;
+    }
+    state.hints = { running: true, kind: kind, text: '', trunc: false, err: null };
+    aborter = new AbortController(); render();
+    try {
+      var r = await sampleFn(prompt, { signal: aborter.signal, cache: false, onText: function (u) { state.hints.text = u.text; renderHintOut(); } });
+      state.hints.text = r.text; state.hints.trunc = r.truncated;
+      state.hintCache[kind] = { text: r.text, at: Date.now(), sig: hintSig() }; store.set('nm.hints', state.hintCache);
+    } catch (e) {
+      state.hints.text = (e && e.text) || state.hints.text;
+      if (!e || e.code !== 'cancelled') state.hints.err = hintErr(e);
+    } finally { state.hints.running = false; aborter = null; render(); }
+  }
+  function hintErr(e) {
+    var c = e && e.code;
+    if (c === 'not_granted') return 'Claude access was declined for this page. Reopen it to be asked again.';
+    if (c === 'rate_limited') return 'Too many requests or your usage limit was reached. Try again later.';
+    if (c === 'session_expired') return 'Sign in to Claude again, then retry.';
+    if (c === 'sampling_disabled') return 'Claude is not available for this account.';
+    return 'Could not get an answer (' + (c || 'unknown') + '). Tap again to retry.';
+  }
+
+  /* ---------- settings sheet ---------- */
+  function openSheet() {
+    var s = $('sheet');
+    s.hidden = false;
+    s.innerHTML = '<div class="sheet-bg" data-action="closesheet"><div class="sheet" role="dialog" aria-label="Connection settings">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><h2 class="title" style="font-size:1.4rem">Connection</h2><button class="btn" type="button" data-action="closesheet">Close</button></div>' +
+      '<p class="lede">Entries are saved to <b>' + esc(cfg.owner + '/' + cfg.repo) + '</b> ' + (transport === 'mcp' ? 'through your GitHub connector in claude.ai. No token is stored in this page.' : 'with a GitHub token kept only in this browser.') + '</p>' +
+      (transport === 'mcp' ? '' :
+        '<label>GitHub token<input type="password" id="cfgToken" placeholder="' + (getToken() ? 'saved, leave blank to keep' : 'github_pat_...') + '" autocomplete="off"></label>' +
+        '<p class="lede">Create a fine-grained token for this one repository with Contents: read and write, expiring in 90 days. It is stored in this browser and sent only to api.github.com.</p>' +
+        (getToken() ? '<button class="btn" type="button" data-action="forgettoken">Forget token</button>' : '')) +
+      '<label>Owner<input type="text" id="cfgOwner" value="' + esc(cfg.owner) + '" autocomplete="off"></label>' +
+      '<label>Repository<input type="text" id="cfgRepo" value="' + esc(cfg.repo) + '" autocomplete="off"></label>' +
+      '<label>File path<input type="text" id="cfgPath" value="' + esc(cfg.path) + '" autocomplete="off"></label>' +
+      '<label>Branch<input type="text" id="cfgBranch" value="' + esc(cfg.branch) + '" autocomplete="off"></label>' +
+      '<div class="row"><button class="btn" type="button" data-action="savecfg">Save settings</button><button class="btn" type="button" data-action="testconn">Test connection</button></div>' +
+      '<pre id="diag" hidden></pre>' +
+      '<p class="lede">Reminder: add a daily 22:00 event in Google Calendar with this page\'s link, so your devices nudge you.</p></div></div>';
+  }
+  async function testConn() {
+    var pre = $('diag'); pre.hidden = false; pre.textContent = 'Testing...';
+    var out = [];
+    if (transport !== 'mcp') {
+      if (transport !== 'rest') { pre.textContent = 'No GitHub token saved. Paste one above and tap Save settings.'; return; }
+      try {
+        var r1 = await ghRead(cfg.path);
+        out.push(r1 === null ? 'read OK: ' + cfg.path + ' does not exist yet (created on first save)' : 'read OK: sha=' + r1.sha + ', ' + r1.text.length + ' chars');
+        var r2 = await ghRead('README.md');
+        out.push('repo visible to the token: ' + (r2 !== null ? 'yes' : 'NO (check repository access on the token)'));
+        out.push('write access is only proven by the first save');
+      } catch (e) { out.push('error: ' + e.code + ' ' + trunc(e.message, 160)); }
+      pre.textContent = out.join('\n'); return;
+    }
+    try {
+      var lt = await mcp.listTools(SERVER);
+      var sv = lt.servers && lt.servers[0];
+      out.push('listTools(' + SERVER + '): ' + (sv ? 'auth=' + sv.authStatus + ', tools=' + sv.tools.map(function (t) { return t.name; }).join(', ') : 'server not listed'));
+    } catch (e) { out.push('listTools failed: ' + e.code + ' ' + trunc(e.message, 120)); }
+    for (var k = 0; k < 2; k++) {
+      var tn = ['get_file_contents', 'create_or_update_file'][k];
+      try {
+        var d = await mcp.describeTool(SERVER, tn);
+        var props = d.inputSchema && d.inputSchema.properties ? Object.keys(d.inputSchema.properties).join(', ') : '(no schema)';
+        out.push(tn + ' inputs: ' + props);
+      } catch (e) { out.push(tn + ': no schema (' + e.code + ')'); }
+    }
+    try {
+      var res = await mcp.callTool(SERVER, 'get_file_contents', { owner: cfg.owner, repo: cfg.repo, path: cfg.path }, { cache: { refresh: true } });
+      var f = parseFile(res);
+      out.push('read OK: blocks=' + (res.content || []).map(function (b) { return b.type; }).join('+') + ', sha=' + (f.sha || 'none') + ', text=' + (f.text == null ? 'none' : f.text.length + ' chars'));
+    } catch (e) { out.push('read: ' + e.code + ' ' + trunc(e.message, 200) + (MISSING_RE.test(String(e.message)) ? ' (file missing, or repo not visible to the token: write access is only proven by the first save)' : '')); }
+    pre.textContent = out.join('\n');
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-action]');
+    if (!t) return;
+    var a = t.getAttribute('data-action'), v = t.getAttribute('data-v');
+    if (a === 'closesheet') { if (ev.target !== t && t.classList.contains('sheet-bg')) return; $('sheet').hidden = true; return; }
+    if (a === 'tab') { location.hash = '#' + v; return; }
+    if (a === 'chip') { state.msg = null; if (state.pending.length) flush(); else load(); return; }
+    if (a === 'settings') { openSheet(); return; }
+    if (a === 'savecfg') {
+      cfg = { owner: $('cfgOwner').value.trim() || CFG_DEFAULT.owner, repo: $('cfgRepo').value.trim() || CFG_DEFAULT.repo, path: $('cfgPath').value.trim() || CFG_DEFAULT.path, branch: $('cfgBranch').value.trim() || CFG_DEFAULT.branch };
+      store.set('nm.cfg', cfg);
+      var tk = $('cfgToken');
+      if (tk && tk.value.trim()) store.set('nm.token', tk.value.trim());
+      $('sheet').hidden = true; startSync(); return;
+    }
+    if (a === 'forgettoken') { store.set('nm.token', ''); $('sheet').hidden = true; startSync(); return; }
+    if (a === 'testconn') { testConn(); return; }
+    if (a === 'mood') { state.form.mood = +v; state.msg = null; render(); return; }
+    if (a === 'energy') { state.form.energy = state.form.energy === +v ? null : +v; render(); return; }
+    if (a === 'tag') { var i = state.form.tags.indexOf(v); if (i >= 0) state.form.tags.splice(i, 1); else state.form.tags.push(v); render(); return; }
+    if (a === 'emotion') {
+      var j = state.form.emotions.indexOf(v);
+      if (j >= 0) state.form.emotions.splice(j, 1); else if (state.form.emotions.length < MAX_EMOTIONS) state.form.emotions.push(v);
+      render(); return;
+    }
+    if (a === 'addtag') {
+      var inp = $('newTag'), nt = inp.value.trim().toLowerCase().replace(/[^a-z0-9 -]/g, '').slice(0, 24);
+      if (nt && state.form.tags.indexOf(nt) < 0) state.form.tags.push(nt);
+      render(); return;
+    }
+    if (a === 'save') { saveEntry(); return; }
+    if (a === 'gotoday') { selectDate(today); return; }
+    if (a === 'day') { state.histSel = v; render(); return; }
+    if (a === 'edit') { selectDate(v); location.hash = '#today'; return; }
+    if (a === 'prevm') { var d0 = new Date(state.histMonth + '-01T00:00:00Z'); d0.setUTCMonth(d0.getUTCMonth() - 1); state.histMonth = d0.toISOString().slice(0, 7); render(); return; }
+    if (a === 'nextm') { if (state.histMonth >= today.slice(0, 7)) return; var d1 = new Date(state.histMonth + '-01T00:00:00Z'); d1.setUTCMonth(d1.getUTCMonth() + 1); state.histMonth = d1.toISOString().slice(0, 7); render(); return; }
+    if (a === 'more') { state.histShown += 20; render(); return; }
+    if (a === 'hints') { runHints(v); return; }
+    if (a === 'stop') { if (aborter) aborter.abort(); return; }
+  });
+  document.addEventListener('input', function (ev) {
+    if (ev.target.id === 'noteInput') state.form.note = ev.target.value;
+  });
+  document.addEventListener('change', function (ev) {
+    if (ev.target.id === 'dateInput' && ev.target.value) selectDate(ev.target.value);
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && ev.target.id === 'newTag') { ev.preventDefault(); var b = document.querySelector('[data-action="addtag"]'); if (b) b.click(); }
+    if (ev.key === 'Escape') $('sheet').hidden = true;
+  });
+  function selectDate(d) { state.selectedDate = d; state.msg = null; loadForm(d); render(); }
+  function saveEntry() {
+    var f = state.form, d = state.selectedDate;
+    if (f.mood == null) return;
+    var e = { date: d, mood: f.mood, tags: f.tags.slice(), savedAt: romeISO() };
+    if (f.energy) e.energy = f.energy;
+    if (f.emotions.length) e.emotions = f.emotions.slice(0, MAX_EMOTIONS);
+    if (f.note.trim()) e.note = f.note.trim();
+    state.entries.set(d, e);
+    state.pending = state.pending.filter(function (p) { return p.date !== d; }).concat([e]);
+    store.set('nm.pending', state.pending);
+    state.msg = { kind: 'ok', text: 'Saved on this device. Syncing to GitHub...' };
+    render(); flush();
+  }
+  function route() {
+    var h = (location.hash || '').replace('#', '');
+    state.tab = TABS.some(function (t) { return t.id === h; }) ? h : 'today';
+    if (state.tab === 'today') loadForm(state.selectedDate);
+    render(); window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', route);
+
+  /* The page can stay open past midnight (Rome). Move "today" forward unless a draft for the old day is in progress. */
+  function refreshToday() {
+    var t = romeDate();
+    if (t === today) return;
+    var follow = state.selectedDate === today && formPristine();
+    today = t;
+    if (follow) { state.selectedDate = t; state.msg = null; loadForm(t); }
+    state.histMonth = t.slice(0, 7);
+    render();
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshToday(); });
+  window.addEventListener('focus', refreshToday);
+
+  /* ---------- boot ---------- */
+  cacheLocal();
+  loadForm(today);
+  var h0 = (location.hash || '').replace('#', '');
+  if (TABS.some(function (t) { return t.id === h0; })) state.tab = h0;
+  state.sync = 'loading';
+  render();
+  /* Inside claude.ai the connector does the GitHub work. Anywhere else (a downloaded or hosted copy) the page uses the GitHub REST API with a token the user saved in this browser. */
+  function startSync() {
+    transport = mcp ? 'mcp' : (getToken() ? 'rest' : null);
+    if (transport) load();
+    else { state.sync = 'noconn'; state.err = { code: 'no_token', message: '' }; render(); }
+  }
+  var c = window.claude;
+  if (c && typeof c.use === 'function') {
+    c.use('sample').then(function (s) { sampleFn = s; if (state.tab === 'hints') render(); }).catch(function () {});
+    c.use('mcp').then(function (m) { mcp = m; startSync(); }).catch(function () { startSync(); });
+  } else {
+    startSync();
+  }
+})();
+</script>
+</body></html>
